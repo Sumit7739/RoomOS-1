@@ -13,14 +13,14 @@ export async function renderRoster() {
         const isAdmin = res.role === 'admin'; // Or allow everyone to edit if desired
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        const localDateStr = new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'});
+        const localDateStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
         const todayInKolkata = new Date(localDateStr);
         const todayIndex = (todayInKolkata.getDay() + 6) % 7; // Mon=0
 
         let html = `
             <div class="fade-in" style="padding-bottom: 80px;">
                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: var(--space-lg);">
-                    ${isAdmin ? '<button id="regenerate-plan-btn" class="icon-btn" title="Regenerate Plan"><i class="ph ph-arrows-clockwise"></i></button>' : ''}
+
                 </div>
                 <div id="roster-list" class="roster-grid">
         `;
@@ -86,21 +86,21 @@ export async function renderRoster() {
                                     <div class="details-section__title">Schedule Breakdown</div>
                                     ${earliestLeaveTimestamp ? `<div class="details-highlight">Alarm Clock: <b>${new Date(earliestLeaveTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</b> (${earliestLeaverName})</div>` : `<div class="details-highlight">Everyone has the day off!</div>`}
                                     ${schedules.map(s => {
-                                        let bufferText = '';
-                                        if (s.isOff) {
-                                            bufferText = '<span style="color:var(--success)">Day Off</span>';
-                                        } else if (s.leaveAt && earliestLeaveTimestamp) {
-                                            const myTimestamp = new Date(`1970-01-01T${s.leaveAt}`).getTime();
-                                            const bufferMinutes = (myTimestamp - earliestLeaveTimestamp) / (1000 * 60);
-                                            const bufferHours = (bufferMinutes / 60).toFixed(1);
-                                            const bufferColor = bufferMinutes >= 120 ? 'var(--success)' : 'var(--warning)';
-                                            bufferText = `Buffer: <b style="color:${bufferColor}">${bufferHours} hr</b>`;
-                                        } else {
-                                            bufferText = 'No time set';
-                                        }
-                                        const leaveTimeStr = s.leaveAt ? new Date(`1970-01-01T${s.leaveAt}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A';
-                                        return `<div class="details-person-row"><span>${s.name} <small>(Leaves at ${leaveTimeStr})</small></span> <span>${bufferText}</span></div>`;
-                                    }).join('')}
+                let bufferText = '';
+                if (s.isOff) {
+                    bufferText = '<span style="color:var(--success)">Day Off</span>';
+                } else if (s.leaveAt && earliestLeaveTimestamp) {
+                    const myTimestamp = new Date(`1970-01-01T${s.leaveAt}`).getTime();
+                    const bufferMinutes = (myTimestamp - earliestLeaveTimestamp) / (1000 * 60);
+                    const bufferHours = (bufferMinutes / 60).toFixed(1);
+                    const bufferColor = bufferMinutes >= 120 ? 'var(--success)' : 'var(--warning)';
+                    bufferText = `Buffer: <b style="color:${bufferColor}">${bufferHours} hr</b>`;
+                } else {
+                    bufferText = 'No time set';
+                }
+                const leaveTimeStr = s.leaveAt ? new Date(`1970-01-01T${s.leaveAt}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A';
+                return `<div class="details-person-row"><span>${s.name} <small>(Leaves at ${leaveTimeStr})</small></span> <span>${bufferText}</span></div>`;
+            }).join('')}
                                 </div>
                                 <div class="details-section">
                                     <div class="details-section__title">Passengers (Off-Duty)</div>
@@ -131,24 +131,20 @@ export async function renderRoster() {
             if (details) {
                 // Add cursor pointer to indicate clickability
                 card.style.cursor = 'pointer';
-                
+
                 card.addEventListener('click', (e) => {
                     // Don't toggle if clicking on the summary itself (to avoid double-toggle)
                     if (e.target.closest('.details-summary')) {
                         return;
                     }
-                    
+
                     // Toggle the details
                     details.open = !details.open;
                 });
             }
         });
 
-        // Event listener for the new regenerate button
-        const regenBtn = document.getElementById('regenerate-plan-btn');
-        if (regenBtn) {
-            regenBtn.addEventListener('click', handleRegeneratePlan);
-        }
+
 
     } catch (error) {
         container.innerHTML = `
@@ -165,23 +161,4 @@ export async function renderRoster() {
     }
 }
 
-async function handleRegeneratePlan() {
-    if (!confirm('Are you sure you want to regenerate the weekly plan? This will overwrite the current assignments based on the latest schedules.')) {
-        return;
-    }
 
-    const btn = document.getElementById('regenerate-plan-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i>';
-
-    try {
-        const token = localStorage.getItem('token');
-        await apiCall('/schedule/generate-plan', 'POST', null, token);
-        showToast('Plan regenerated successfully!', 'success');
-        renderRoster(); // Refresh the view
-    } catch (err) {
-        showToast(err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i>';
-    }
-}

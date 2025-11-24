@@ -261,33 +261,49 @@ class TransactionController {
             $amount = floatval($transaction['amount']);
             $groupId = $transaction['group_id'];
 
-            // Get all members in the group to reverse the balance changes
-            // We need to reverse the exact same logic that was used when creating the transaction
-            // For simplicity, we'll get all members and reverse proportionally
-            $stmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ?");
-            $stmt->execute([$groupId]);
-            $allMembers = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
-            $memberCount = count($allMembers);
-            
+            // Get the original split_between members to reverse the balance changes correctly
+            $splitBetween = $transaction['split_between']
+                ? json_decode($transaction['split_between'], true)
+                : null;
+
+            if ($splitBetween === null) {
+                // Fallback for older transactions: assume split between all members
+                $stmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ?");
+                $stmt->execute([$groupId]);
+                $splitBetween = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+
+            $memberCount = count($splitBetween);
+
             if ($memberCount > 0) {
-                // Check if it was a direct payment (only one person, not the payer)
-                // We'll assume it was split equally among all members for reversal
-                // This is a simplified approach - ideally we'd store split_between in the transaction
-                
-                $share = $amount / $memberCount;
-                
-                foreach ($allMembers as $mid) {
-                    if ($mid == $userId) {
-                        // Reverse payer's credit: - (Amount - Share)
-                        $change = -($amount - $share);
-                    } else {
-                        // Reverse others' debt: + Share
-                        $change = $share;
-                    }
-                    
+                $isDirectPayment = ($memberCount === 1 && !in_array($userId, $splitBetween));
+
+                if ($isDirectPayment) {
+                    // Reverse a direct payment
+                    $selectedUserId = $splitBetween[0];
+
+                    // Payer gets -amount (reversing the credit)
+                    $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
+                    $stmt->execute([$amount, $groupId, $userId]);
+
+                    // Selected person gets +amount (reversing the debt)
                     $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
-                    $stmt->execute([$change, $groupId, $mid]);
+                    $stmt->execute([$amount, $groupId, $selectedUserId]);
+                } else {
+                    // Reverse a split payment
+                    $share = $amount / $memberCount;
+
+                    foreach ($splitBetween as $mid) {
+                        if ($mid == $userId) {
+                            // Reverse payer's credit: - (Amount - Share)
+                            $change = -($amount - $share);
+                        } else {
+                            // Reverse others' debt: + Share
+                            $change = $share;
+                        }
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$change, $groupId, $mid]);
+                    }
                 }
             }
 

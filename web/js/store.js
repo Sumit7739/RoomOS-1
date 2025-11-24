@@ -43,6 +43,7 @@ export async function cacheData(endpoint, data) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction('api_cache', 'readwrite');
         const store = tx.objectStore('api_cache');
+        store.put({ endpoint, data });
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(new Error("Failed to save to local storage."));
     });
@@ -64,6 +65,7 @@ export async function queueAction(endpoint, method, body) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction('pending_actions', 'readwrite');
         const store = tx.objectStore('pending_actions');
+        store.add({ endpoint, method, body, timestamp: Date.now() });
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(new Error("Failed to queue action in local storage."));
     });

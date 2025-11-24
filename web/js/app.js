@@ -214,7 +214,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     navigate('dashboard');
                 }
             })
-            .catch(() => navigate('login')); // If the check fails, go to login
+            .catch((err) => {
+                console.warn('Initial token check failed:', err);
+                // If offline, allow access assuming token is valid
+                if (!navigator.onLine || err.message.includes('offline') || err.message.includes('NetworkError')) {
+                    console.log('Offline detected, proceeding to app...');
+                    const lastView = localStorage.getItem('last_view');
+                    if (lastView && lastView !== 'login' && lastView !== 'group_setup') {
+                        navigate(lastView);
+                    } else {
+                        navigate('dashboard');
+                    }
+                } else {
+                    navigate('login');
+                }
+            });
     } else {
         navigate('login');
     }

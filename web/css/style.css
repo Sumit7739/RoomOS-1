@@ -1025,9 +1025,9 @@ details[open]>.details-summary-profile i {
   transform: rotate(180deg);
 }
 
-.details-content-profile {
+/* .details-content-profile {
   padding: 0 var(--space-lg) var(--space-lg) var(--space-lg);
-}
+} */
 
 /* --- RESPONSIVE --- */
 @media (max-width: 640px) {

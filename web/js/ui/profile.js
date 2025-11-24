@@ -71,7 +71,7 @@ export async function renderProfile() {
         ${user.role === 'admin' && pendingRequests.length > 0 ? renderPendingRequests(pendingRequests) : ''}
 
         <!-- Weekly Schedule Card -->
-        <div class="card card-collapsible">
+        <div class="card card-collapsible" style="padding: 16px;">
           <details>
             <summary class="details-summary-profile">
               <h2>Weekly Class Schedule</h2>
@@ -211,7 +211,7 @@ export async function renderProfile() {
 
 
   } catch (error) {
-            container.innerHTML = `
+    container.innerHTML = `
                 <div class="card" style="border-left: 4px solid var(--danger); animation: fadeIn 0.3s ease-out;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <i class="ph ph-warning-circle" style="font-size: 2rem; color: var(--danger);"></i>
@@ -221,7 +221,8 @@ export async function renderProfile() {
                         </div>
                     </div>
                 </div>
-            `;  }
+            `;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -235,7 +236,7 @@ function renderScheduleForm(schedule) {
     const isOff = !!daySchedule.off;
 
     html += `
-      <div style="margin-bottom: var(--space-md); padding: var(--space-md); background: var(--bg-elevated); border-radius: var(--radius-md);">
+      <div style="margin-bottom: var(--space-md); padding: 12px; background: var(--bg-elevated); border-radius: var(--radius-md);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
           <div style="font-weight: 600; color: var(--text-primary);">${day}</div>
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
@@ -243,7 +244,7 @@ function renderScheduleForm(schedule) {
             <span style="font-size: 0.85rem; color: var(--text-secondary);">Off Day</span>
           </label>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
             <label style="display: block; font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">Leave at</label>
             <input type="time" class="input-field time-input schedule-input" data-day="${day}" data-type="start"
